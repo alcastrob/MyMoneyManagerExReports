@@ -14,8 +14,7 @@
 <h3><TMPL_VAR REPORTNAME></h3><hr>
 
 <div class = "row">
-<div class = "col-xs-2"></div>
-<div class = "col-xs-8">
+<div class = "col-xs-12">
 <table class="table">
     <thead>
         <tr>
@@ -87,12 +86,7 @@
         }
     }
 
-    function applyRecurringFormat(elements){
-
-    }
-
     applyMoneyFormat(document.getElementsByClassName("money"));
     applyMoneyFormat(document.getElementsByClassName("subtotal"));
-    applyRecurringFormat(document.)
 </script>
 </html>
