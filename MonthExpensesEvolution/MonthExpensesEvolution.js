@@ -9,6 +9,12 @@ for(var i=0;i!==lines.length;i++){
     totalSoFar += Number(currentLine.querySelector('.money').innerText);
     currentLine.querySelector('.subtotal').innerText = totalSoFar.toFixed(2);
     currentLine.querySelector('.date').innerText = new Date(currentLine.querySelector('.date').innerText.substring(0, 10)).toLocaleDateString();
+
+    if (currentLine.className === "line Repeats")
+    {
+        currentLine.cells[1].innerHTML = currentLine.cells[1].innerText;
+        currentLine.cells[2].innerHTML = currentLine.cells[2].innerText;
+    }
 }
 
 // Format double to base currency
