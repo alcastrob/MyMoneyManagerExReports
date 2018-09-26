@@ -24,6 +24,7 @@
             <th>Category</th>
             <th>Subcategory</th>
             <th style="display:none;">Status</th>
+            <th style="display:none;">Type</th>
             <th style="text-align: right;">Amount</th>
             <th style="text-align: right;">Sum</th>
             <th>Notes</th>
@@ -36,7 +37,8 @@
             <td><a href="trxid:<TMPL_VAR ID>"><TMPL_VAR Payee></a></td>
             <td><TMPL_VAR Category></td>
             <td><TMPL_VAR Subcategory></td>
-            <td class="type" style="display:none"><TMPL_VAR Status></td> 
+            <td class="status" style="display:none"><TMPL_VAR Status></td>
+            <td class="type" style="display:none"><TMPL_VAR Type></td>
             <td class="money" sorttable_customkey="<TMPL_VAR Ammount>"><TMPL_VAR Ammount></td>
             <td class="subtotal"></td>
             <td><TMPL_VAR Notes></td>
