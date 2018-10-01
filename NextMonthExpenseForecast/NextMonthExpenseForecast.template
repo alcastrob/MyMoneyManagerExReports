@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv = "Content-Type" content = "text/html" />
+    <title><TMPL_VAR REPORTNAME></title>
+    <link href="master.css" rel="stylesheet">
+    <style>
+        tr.line.Repeats { background-color: #F5E965; }
+    </style>
+</head>
+<body>
+<div class = "container">
+<h3><TMPL_VAR REPORTNAME></h3><hr>
+
+<div class = "row">
+<div class = "col-xs-12">
+<table class="table">
+    <thead>
+        <tr>
+            <th style="width: 100px;">Date</th>
+            <th>Account</th>
+            <th>Payee</th>
+            <th>Category</th>
+            <th>Subcategory</th>
+            <th style="display:none;">Status</th>
+            <th style="display:none;">Type</th>
+            <th style="text-align: right;">Amount</th>
+            <th style="text-align: right;">Sum</th>
+            <th>Notes</th>
+        </tr>
+    </thead>
+    <tbody>
+<TMPL_LOOP NAME=CONTENTS>        <tr class='line <TMPL_VAR Status>'>
+            <td class="date"><TMPL_VAR Moment></td>
+            <td><a href="trxid:<TMPL_VAR ID>"><TMPL_VAR Source></a></td>
+            <td><a href="trxid:<TMPL_VAR ID>"><TMPL_VAR Payee></a></td>
+            <td><TMPL_VAR Category></td>
+            <td><TMPL_VAR Subcategory></td>
+            <td class="status" style="display:none"><TMPL_VAR Status></td>
+            <td class="type" style="display:none"><TMPL_VAR Type></td>
+            <td class="money" sorttable_customkey="<TMPL_VAR Ammount>"><TMPL_VAR Ammount></td>
+            <td class="subtotal"></td>
+            <td><TMPL_VAR Notes></td>
+        </tr></TMPL_LOOP>
+    </tbody>
+    <tfoot>
+    </tfoot>
+</table>
+</div></div></div>
+<TMPL_LOOP ERRORS>
+    <hr>    <TMPL_VAR ERROR>
+</TMPL_LOOP>
+
+</body>
+<script>
+    var lines = document.getElementsByClassName('line');
+    var totalSoFar = 0;
+    for(var i=0;i!==lines.length;i++){
+        var currentLine = lines[i];
+        //Positive or negative ammount depending on the type of the line
+        if (currentLine.querySelector('.type').innerText!=='Deposit'){
+            currentLine.querySelector('.money').innerText = '-' + currentLine.querySelector('.money').innerText;
+        } 
+        totalSoFar += Number(currentLine.querySelector('.money').innerText);
+        currentLine.querySelector('.subtotal').innerText = totalSoFar.toFixed(2);
+        currentLine.querySelector('.date').innerText = new Date(currentLine.querySelector('.date').innerText.substring(0, 10)).toLocaleDateString();
+
+        if (currentLine.className === "line Repeats")
+        {
+            currentLine.cells[1].innerHTML = currentLine.cells[1].innerText;
+            currentLine.cells[2].innerHTML = currentLine.cells[2].innerText;
+        }
+    }
+
+    // Format double to base currency
+    function currency(n) {
+        n = parseFloat(n);
+        n = isNaN(n) ? 0 : n.toFixed(2);
+        var out = n.toString().replace(".", "|");
+        out = out.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        out = out.replace("|", ",");
+        return out;
+    }
+
+    function applyMoneyFormat(elements) {
+        for (var i = 0; i < elements.length; i++) {
+            var element = elements[i];
+            element.style.textAlign = 'right';
+            if (element.innerHTML.indexOf("-") > -1) {
+                element.style.color = "#ff0000";
+            }
+            element.innerHTML = currency(element.innerHTML) + '€';
+        }
+    }
+
+    applyMoneyFormat(document.getElementsByClassName("money"));
+    applyMoneyFormat(document.getElementsByClassName("subtotal"));
+</script>
+</html>
