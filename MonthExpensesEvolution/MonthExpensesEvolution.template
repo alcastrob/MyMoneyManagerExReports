@@ -6,7 +6,10 @@
     <title><TMPL_VAR REPORTNAME></title>
     <link href="master.css" rel="stylesheet">
     <style>
-        tr.line.Repeats { background-color: #F5E965; }
+        tr.line.Repeats:nth-child(odd) { background-color: #DDF1FC; }
+        tr.line.Repeats { background-color: #B5E2FA; }
+        tr.line:nth-child(odd) { background-color: #FFF9A8; }
+        tr.line { background-color: #FFFBC7; }
     </style>
 </head>
 <body>
