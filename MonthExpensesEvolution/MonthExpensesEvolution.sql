@@ -6,6 +6,7 @@ FROM CHECKINGACCOUNT_V1 c
     LEFT JOIN CATEGORY_V1 cat ON cat.CATEGID = c.CATEGID
     LEFT JOIN SUBCATEGORY_V1 cat2 ON cat2.SUBCATEGID = c.SUBCATEGID
 WHERE TRANSCODE != "Transfer"
+    AND c.Status != "V"
     AND Moment >= date("now","start of month") 
     AND Moment <= date("now","start of month","+1 month","-1 day")
 UNION
@@ -15,6 +16,7 @@ FROM BILLSDEPOSITS_V1 c
     LEFT JOIN ACCOUNTLIST_V1 a1 ON c.TOACCOUNTID =a1.ACCOUNTID
     LEFT JOIN PAYEE_V1 p ON p.PAYEEID = c.PAYEEID
     LEFT JOIN CATEGORY_V1 cat ON cat.CATEGID = c.CATEGID
-    LEFT JORDER BY Section, MomentOIN SUBCATEGORY_V1 cat2 ON cat2.SUBCATEGID = c.SUBCATEGID
+    LEFT JOIN SUBCATEGORY_V1 cat2 ON cat2.SUBCATEGID = c.SUBCATEGID
 WHERE TRANSCODE != "Transfer"
     AND Moment <= date("now","start of month","+1 month","-1 day")
+ORDER BY Section, Moment

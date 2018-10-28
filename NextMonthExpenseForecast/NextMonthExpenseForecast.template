@@ -6,10 +6,11 @@
     <title><TMPL_VAR REPORTNAME></title>
     <link href="master.css" rel="stylesheet">
     <style>
-        tr.line.Repeats:nth-child(odd) { background-color: #DDF1FC; }
-        tr.line.Repeats { background-color: #B5E2FA; }
-        tr.line:nth-child(odd) { background-color: #FFF9A8; }
-        tr.line { background-color: #FFFBC7; }
+        tr.line.Repeats:nth-child(odd) { background-color: #FFF9A8; }
+        tr.line.Repeats { background-color: #FFFBC7; }
+        tr.line:nth-child(odd) { background-color: #DDF1FC; }
+        tr.line { background-color: #B5E2FA; }
+        .table>thead>tr>th { background: #5D576B; color: #FFFFFF; }
     </style>
 </head>
 <body>
