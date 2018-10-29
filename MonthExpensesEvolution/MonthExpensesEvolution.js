@@ -11,10 +11,10 @@ for(var i=0;i!==lines.length;i++){
     currentLine.querySelector('.date').innerText = new Date(currentLine.querySelector('.date').innerText.substring(0, 10)).toLocaleDateString();
 
     if (currentLine.className === "line Repeats")
-    {
-        currentLine.cells[1].innerHTML = currentLine.cells[1].innerText;
-        currentLine.cells[2].innerHTML = currentLine.cells[2].innerText;
-    }
+        {
+            currentLine.cells[1].innerHTML = '<div class="ellipsis">' + currentLine.cells[1] .innerText + '</div>';
+            currentLine.cells[2].innerHTML = '<div class="ellipsis">' + currentLine.cells[2].innerText + '</div>';
+        }
 }
 
 // Format double to base currency

@@ -5,12 +5,14 @@
     <meta http-equiv = "Content-Type" content = "text/html" />
     <title><TMPL_VAR REPORTNAME></title>
     <link href="master.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Muli" rel="stylesheet">
     <style>
         tr.line.Repeats:nth-child(odd) { background-color: #FFF9A8; }
-        tr.line.Repeats { background-color: #FFFBC7; }
+        tr.line.Repeats { background-color: #FFFBC7; font-family: 'Muli', sans-serif; }
         tr.line:nth-child(odd) { background-color: #DDF1FC; }
-        tr.line { background-color: #B5E2FA; }
-        .table>thead>tr>th { background: #5D576B; color: #FFFFFF; }
+        tr.line { background-color: #B5E2FA; font-family: 'Muli', sans-serif; }
+        .table>thead>tr>th { background: #5D576B; color: #FFFFFF; font-family: 'Muli', sans-serif;}
+        .ellipsis {width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     </style>
 </head>
 <body>
@@ -37,8 +39,8 @@
     <tbody>
 <TMPL_LOOP NAME=CONTENTS>        <tr class='line <TMPL_VAR Status>'>
             <td class="date"><TMPL_VAR Moment></td>
-            <td><a href="trxid:<TMPL_VAR ID>"><TMPL_VAR Source></a></td>
-            <td><a href="trxid:<TMPL_VAR ID>"><TMPL_VAR Payee></a></td>
+            <td><div class="ellipsis"><a href="trxid:<TMPL_VAR ID>"><TMPL_VAR Source></a></div></td>
+            <td><div class="ellipsis"><a href="trxid:<TMPL_VAR ID>"><TMPL_VAR Payee></a></div></td>
             <td><TMPL_VAR Category></td>
             <td><TMPL_VAR Subcategory></td>
             <td class="status" style="display:none"><TMPL_VAR Status></td>
@@ -72,8 +74,8 @@
 
         if (currentLine.className === "line Repeats")
         {
-            currentLine.cells[1].innerHTML = currentLine.cells[1].innerText;
-            currentLine.cells[2].innerHTML = currentLine.cells[2].innerText;
+            currentLine.cells[1].innerHTML = '<div class="ellipsis">' + currentLine.cells[1] .innerText + '</div>';
+            currentLine.cells[2].innerHTML = '<div class="ellipsis">' + currentLine.cells[2].innerText + '</div>';
         }
     }
 
