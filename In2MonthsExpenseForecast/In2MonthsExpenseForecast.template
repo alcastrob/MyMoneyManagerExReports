@@ -7,12 +7,13 @@
     <link href="master.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Muli" rel="stylesheet">
     <style>
-        tr.line.Repeats:nth-child(odd) { background-color: #FFF9A8; }
-        tr.line.Repeats { background-color: #FFFBC7; font-family: 'Muli', sans-serif; }
-        tr.line:nth-child(odd) { background-color: #DDF1FC; }
-        tr.line { background-color: #B5E2FA; font-family: 'Muli', sans-serif; }
-        .table>thead>tr>th { background: #5D576B; color: #FFFFFF; font-family: 'Muli', sans-serif;}
-        .ellipsis {width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	tr.line.Repeats:nth-child(odd) { background-color: #FFF9A8; }
+	tr.line.Repeats { background-color: #FFFBC7; font-family: 'Muli', sans-serif; }
+	tr.line:nth-child(odd) { background-color: #DDF1FC; }
+	tr.line { background-color: #B5E2FA; font-family: 'Muli', sans-serif; }
+	.table>thead>tr>th { background: #5D576B; color: #FFFFFF; font-family: 'Muli', sans-serif;}
+	.ellipsis {width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.ellipsis2 {width: 330px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     </style>
 </head>
 <body>
@@ -41,13 +42,13 @@
             <td class="date"><TMPL_VAR Moment></td>
             <td><div class="ellipsis"><a href="trxid:<TMPL_VAR ID>"><TMPL_VAR Source></a></div></td>
             <td><div class="ellipsis"><a href="trxid:<TMPL_VAR ID>"><TMPL_VAR Payee></a></div></td>
-            <td><TMPL_VAR Category></td>
-            <td><TMPL_VAR Subcategory></td>
+            <td><div class="ellipsis"><TMPL_VAR Category></div></td>
+            <td><div class="ellipsis"><TMPL_VAR Subcategory></div></td>
             <td class="status" style="display:none"><TMPL_VAR Status></td>
             <td class="type" style="display:none"><TMPL_VAR Type></td>
             <td class="money" sorttable_customkey="<TMPL_VAR Ammount>"><TMPL_VAR Ammount></td>
             <td class="subtotal"></td>
-            <td><TMPL_VAR Notes></td>
+            <td><div class="ellipsis2"><TMPL_VAR Notes></div></td>
         </tr></TMPL_LOOP>
     </tbody>
     <tfoot>
