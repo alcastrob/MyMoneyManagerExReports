@@ -1,0 +1,58 @@
+SELECT '#' AS Id, a.ACCOUNTNAME AS Source, "" AS Payee, "Deposit" AS Type, "Saldo inicial" AS Notes, 
+"" AS Category, "" AS Subcategory, c.TRANSDATE AS Moment, 
+    SUM(CASE 
+    WHEN TRANSCODE = "Withdrawal" AND c.ACCOUNTID = 1 THEN -1*c.TRANSAMOUNT 
+    WHEN TRANSCODE = "Deposit" AND c.ACCOUNTID = 1 THEN c.TRANSAMOUNT
+    WHEN TRANSCODE = "Transfer" AND c.ACCOUNTID = 1 THEN -1*c.TRANSAMOUNT
+    WHEN TRANSCODE = "Transfer" AND c.TOACCOUNTID = 1 THEN c.TRANSAMOUNT
+    END)  
+    +(SELECT INITIALBAL FROM ACCOUNTLIST_V1 WHERE ACCOUNTID = 1) 
+    AS Ammount, "R" AS Status, 0 AS Section
+FROM CHECKINGACCOUNT_V1 c
+    LEFT JOIN ACCOUNTLIST_V1 a ON c.ACCOUNTID = a.ACCOUNTID
+WHERE Moment < date("now","start of month") 
+UNION
+SELECT c.TRANSID AS Id, a.ACCOUNTNAME AS Source, p.PAYEENAME AS Payee, (CASE
+    WHEN TRANSCODE = "Transfer" AND c.ACCOUNTID = 1 THEN "Withdrawal"
+    ELSE c.TRANSCODE
+    END) AS Type, c.NOTES AS Notes, 
+cat.CATEGNAME AS Category, cat2.SUBCATEGNAME AS Subcategory, c.TRANSDATE AS Moment, c.TRANSAMOUNT AS Ammount, 
+c.Status AS Status, 1 AS Section
+FROM CHECKINGACCOUNT_V1 c
+    LEFT JOIN ACCOUNTLIST_V1 a ON c.ACCOUNTID =a.ACCOUNTID
+    LEFT JOIN ACCOUNTLIST_V1 a1 ON c.TOACCOUNTID =a1.ACCOUNTID
+    LEFT JOIN PAYEE_V1 p ON p.PAYEEID = c.PAYEEID
+    LEFT JOIN CATEGORY_V1 cat ON cat.CATEGID = c.CATEGID
+    LEFT JOIN SUBCATEGORY_V1 cat2 ON cat2.SUBCATEGID = c.SUBCATEGID
+WHERE c.Status != "V"
+    AND a.ACCOUNTID = 1
+    AND Moment >= date("now","start of month") 
+    AND Moment <= date("now","start of month","+1 month","-1 day")
+UNION
+SELECT c.TRANSID AS Id, a.ACCOUNTNAME AS Source, p.PAYEENAME AS Payee, "Deposit" AS Type, c.NOTES AS Notes, 
+cat.CATEGNAME AS Category, cat2.SUBCATEGNAME AS Subcategory, c.TRANSDATE AS Moment, c.TRANSAMOUNT AS Ammount, 
+c.Status AS Status, 1 AS Section
+FROM CHECKINGACCOUNT_V1 c
+    LEFT JOIN ACCOUNTLIST_V1 a ON c.ACCOUNTID =a.ACCOUNTID
+    LEFT JOIN ACCOUNTLIST_V1 a1 ON c.TOACCOUNTID =a1.ACCOUNTID
+    LEFT JOIN PAYEE_V1 p ON p.PAYEEID = c.PAYEEID
+    LEFT JOIN CATEGORY_V1 cat ON cat.CATEGID = c.CATEGID
+    LEFT JOIN SUBCATEGORY_V1 cat2 ON cat2.SUBCATEGID = c.SUBCATEGID
+WHERE c.TOACCOUNTID = 1
+    AND c.TRANSCODE = "Transfer"
+    AND Moment >= date("now","start of month") 
+    AND Moment <= date("now","start of month","+1 month","-1 day")
+UNION
+SELECT '#' AS Id, a.ACCOUNTNAME AS Source, p.PAYEENAME AS Payee, c.TRANSCODE AS Type, c.NOTES AS Notes, 
+cat.CATEGNAME AS Category, cat2.SUBCATEGNAME AS Subcategory, c.TRANSDATE AS Moment, c.TOTRANSAMOUNT AS Ammount, 
+'Repeats' AS Status, 2 AS Section
+FROM BILLSDEPOSITS_V1 c
+    LEFT JOIN ACCOUNTLIST_V1 a ON c.ACCOUNTID =a.ACCOUNTID
+    LEFT JOIN ACCOUNTLIST_V1 a1 ON c.TOACCOUNTID =a1.ACCOUNTID
+    LEFT JOIN PAYEE_V1 p ON p.PAYEEID = c.PAYEEID
+    LEFT JOIN CATEGORY_V1 cat ON cat.CATEGID = c.CATEGID
+    LEFT JOIN SUBCATEGORY_V1 cat2 ON cat2.SUBCATEGID = c.SUBCATEGID
+WHERE TRANSCODE != "Transfer"
+    AND Moment <= date("now","start of month","+1 month","-1 day")
+    AND a.ACCOUNTID = 1
+ORDER BY Section, Moment
