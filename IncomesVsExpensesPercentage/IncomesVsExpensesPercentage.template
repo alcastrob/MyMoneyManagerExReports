@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv = "Content-Type" content = "text/html" />
+    <title><TMPL_VAR REPORTNAME></title>
+    <link href="master.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Muli" rel="stylesheet">
+    <style>
+        tr.line.Repeats:nth-child(odd) { background-color: #FFF9A8; }
+        tr.line.Repeats { background-color: #FFFBC7; font-family: 'Muli', sans-serif; }
+        tr.line:nth-child(odd) { background-color: #DDF1FC; }
+        tr.line { background-color: #B5E2FA; font-family: 'Muli', sans-serif; }
+        .table>thead>tr>th { background: #5D576B; color: #FFFFFF; font-family: 'Muli', sans-serif;}
+        .ellipsis {width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ellipsis2 {width: 330px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    </style>
+</head>
+<body>
+<div class = "container">
+    <h3><TMPL_VAR REPORTNAME></h3><hr>
+    <div class = "row">
+        <div class = "col-xs-12">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th style="text-align: right;">Ammount</th>
+                        <th style="text-align: right;">Percentage of Incomes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <TMPL_LOOP NAME=CONTENTS>
+                        <tr>
+                            <td><TMPL_VAR Category></td>
+                            <td class="money"><TMPL_VAR Ammount></td>
+                            <td style="text-align: right"><TMPL_VAR Percentage> %</td>
+                        </tr>
+                    </TMPL_LOOP>
+                </tbody>
+                <tfoot>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+<TMPL_LOOP ERRORS>
+    <hr>    <TMPL_VAR ERROR>
+</TMPL_LOOP>
+
+</body>
+<script>
+    // Format double to base currency
+    function currency(n) {
+        n = parseFloat(n);
+        n = isNaN(n) ? 0 : n.toFixed(2);
+        var out = n.toString().replace(".", "|");
+        out = out.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        out = out.replace("|", ",");
+        return out;
+    }
+
+    function applyMoneyFormat(elements) {
+        for (var i = 0; i < elements.length; i++) {
+            var element = elements[i];
+            element.style.textAlign = 'right';
+            if (element.innerHTML.indexOf("-") > -1) {
+                element.style.color = "#ff0000";
+            }
+            element.innerHTML = currency(element.innerHTML) + '€';
+        }
+    }
+
+    applyMoneyFormat(document.getElementsByClassName("money"));
+</script>
+</html>
