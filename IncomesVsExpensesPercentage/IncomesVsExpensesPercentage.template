@@ -5,133 +5,59 @@
     <meta http-equiv = "Content-Type" content = "text/html" />
     <title><TMPL_VAR REPORTNAME></title>
     <link href="master.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Muli" rel="stylesheet">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB"
-    crossorigin="anonymous">
     <style>
-        tr.line.Repeats:nth-child(odd) { background-color: #FFF9A8; }
-        tr.line.Repeats { background-color: #FFFBC7; font-family: 'Muli', sans-serif; }
-        tr.line:nth-child(odd) { background-color: #DDF1FC; }
-        tr.line { background-color: #B5E2FA; font-family: 'Muli', sans-serif; }
-        .table>thead>tr>th { background: #5D576B; color: #FFFFFF; font-family: 'Muli', sans-serif;}
-        .ellipsis {width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ellipsis2 {width: 330px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #chartdiv { width: 100%; height: 1000px; }
     </style>
-    <script src="https://www.chartjs.org/dist/2.9.3/Chart.min.js"></script>
-	<script src="https://www.chartjs.org/samples/latest/utils.js"></script>
+    <script src="https://www.amcharts.com/lib/4/core.js"></script>
+    <script src="https://www.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>
 </head>
 <body>
-<div class = "container">
-    <h3><TMPL_VAR REPORTNAME></h3><hr>
-    <div class="row">
-        <div class="col-6">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Category</th>
-                        <th style="text-align: right;">Ammount</th>
-                        <th style="text-align: right;">Percentage of Incomes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <TMPL_LOOP NAME=CONTENTS>
-                        <tr>
-                            <td><TMPL_VAR Category></td>
-                            <td class="money"><TMPL_VAR Ammount></td>
-                            <td style="text-align: right"><TMPL_VAR Percentage> %</td>
-                        </tr>
-                    </TMPL_LOOP>
-                </tbody>
-                <tfoot>
-                </tfoot>
-            </table>
-        </div>
-        <div class="col-6">
-            <canvas id="chart-area"></canvas>
-        </div>
-    </div>
-</div>
-<TMPL_LOOP ERRORS>
-    <hr><TMPL_VAR ERROR>
-</TMPL_LOOP>
-
+    <h3>Expenses by percentage compared with the last month incomes</h3>
+    <hr>
+    <div id="chartdiv"></div>
+    <TMPL_LOOP ERRORS>
+        <hr><TMPL_VAR ERROR>
+    </TMPL_LOOP>
 </body>
 <script>
-    // Format double to base currency
-    function currency(n) {
-        n = parseFloat(n);
-        n = isNaN(n) ? 0 : n.toFixed(2);
-        var out = n.toString().replace(".", "|");
-        out = out.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        out = out.replace("|", ",");
-        return out;
-    }
+    // Themes begin
+    am4core.useTheme(am4themes_animated);
+    // Themes end
 
-    function applyMoneyFormat(elements) {
-        for (var i = 0; i < elements.length; i++) {
-            var element = elements[i];
-            element.style.textAlign = 'right';
-            if (element.innerHTML.indexOf("-") > -1) {
-                element.style.color = "#ff0000";
-            }
-            element.innerHTML = currency(element.innerHTML) + '€';
-        }
-    }
+    var chart = am4core.create("chartdiv", am4charts.PieChart3D);
+    chart.hiddenState.properties.opacity = 0; // this creates initial fade-in
 
-    applyMoneyFormat(document.getElementsByClassName("money"));
+    chart.data = [<TMPL_LOOP NAME=CONTENTS>
+    {
+        category: '<TMPL_VAR Category>',
+        percentage: <TMPL_VAR Percentage>,
+        ammount: <TMPL_VAR Ammount> * -1
+    },
+    </TMPL_LOOP>
+    ];
 
-    var randomScalingFactor = function() {
-        return Math.round(Math.random() * 100);
-    };
+    chart.innerRadius = am4core.percent(40);
+    chart.depth = 120;
 
-    var config = {
-        type: 'doughnut',
-        data: {
-            datasets: [{
-                data: [<TMPL_LOOP NAME=CONTENTS><TMPL_VAR Percentage>,</TMPL_LOOP>],
-                backgroundColor: [
-                    // 'rgb(221,255,74)',
-                    'rgb(255, 99, 132)',
-	                'rgb(255, 159, 64)',
-	                'rgb(255, 205, 86)',
-	                'rgb(75, 192, 192)',
-	                'rgb(54, 162, 235)',
-	                'rgb(153, 102, 255)',
-	                'rgb(201, 203, 207)'
-                ],
-                label: 'Dataset 1'
-            }],
-            labels: [<TMPL_LOOP NAME=CONTENTS>'<TMPL_VAR Category>',</TMPL_LOOP>]
-        },
-        options: {
-            responsive: true,
-            legend: {
-                display: false
-            },
-            title: {
-                display: false,
-                text: ''
-            },
-            animation: {
-                animateScale: true,
-                animateRotate: true
-            }
-        }
-    };
+    chart.legend = new am4charts.Legend();
 
-    function initChart() {
-        var ctx = document.getElementById('chart-area').getContext('2d');
-        config.data.datasets[0].data.push(100 - config.data.datasets[0].data[0]);
-        config.data.datasets[0].data.shift();
+    let savingsEntry = {
+        category: 'Ahorro',
+        percentage: 100 - chart.data[0].percentage,
+        ammount: (100 * chart.data[0].ammount / chart.data[0].percentage) - chart.data[0].ammount
+        };
+    chart.data.push(savingsEntry);
+    chart.data.shift();
 
-        config.data.labels.push('Ahorro');
-        config.data.labels.shift();
+    var series = chart.series.push(new am4charts.PieSeries3D());
+    series.labels.template.text = "{category}: {value} €";
+    series.dataFields.value = "ammount";
+    series.dataFields.depthValue = "ammount";
+    series.dataFields.category = "category";
+    series.slices.template.cornerRadius = 5;
+    series.colors.step = 3;
+    chart.fontSize = 20;
 
-        config.data.datasets[0].backgroundColor[config.data.datasets[0].data.length - 1] = 'rgb(221,255,74)';
-
-        window.myDoughnut = new Chart(ctx, config);
-    };
-
-    initChart();
 	</script>
 </html>
