@@ -45,7 +45,7 @@
     let savingsEntry = {
         category: 'Ahorro',
         percentage: 100 - chart.data[0].percentage,
-        ammount: (100 * chart.data[0].ammount / chart.data[0].percentage) - chart.data[0].ammount
+        ammount: ((100 * chart.data[0].ammount / chart.data[0].percentage) - chart.data[0].ammount).toFixed(2)
         };
     chart.data.push(savingsEntry);
     chart.data.shift();
