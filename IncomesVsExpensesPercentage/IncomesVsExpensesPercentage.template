@@ -6,14 +6,14 @@
     <title><TMPL_VAR REPORTNAME></title>
     <link href="master.css" rel="stylesheet">
     <style>
-        #chartdiv { width: 100%; height: 1000px; }
+        #chartdiv { width: 100%; height: 1000px; border: 1px solid red;}
     </style>
     <script src="https://www.amcharts.com/lib/4/core.js"></script>
     <script src="https://www.amcharts.com/lib/4/charts.js"></script>
     <script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>
 </head>
 <body>
-    <h3>Expenses by percentage compared with the last month incomes</h3>
+    <h3>Expenses by percentage compared with the incomes</h3>
     <hr>
     <div id="chartdiv"></div>
     <TMPL_LOOP ERRORS>
@@ -26,32 +26,58 @@
     // Themes end
 
     var chart = am4core.create("chartdiv", am4charts.PieChart3D);
+    chart.responsive.enabled = true;
+    chart.contentAlign = "center";
     chart.hiddenState.properties.opacity = 0; // this creates initial fade-in
 
-    chart.data = [<TMPL_LOOP NAME=CONTENTS>
-    {
+    var rawData = [<TMPL_LOOP NAME=CONTENTS>{
+        type: '<TMPL_VAR Type>',
         category: '<TMPL_VAR Category>',
-        percentage: <TMPL_VAR Percentage>,
-        ammount: <TMPL_VAR Ammount> * -1
+        ammount: <TMPL_VAR Ammount>
     },
-    </TMPL_LOOP>
-    ];
+    </TMPL_LOOP>];
+
+    var totalIncomes = _.find(rawData, {
+        'type': 'Total Ingresos'
+    }).ammount;
+    var totalExpenses = -1 * _.find(rawData, {
+        'type': 'Total Gastos'
+    }).ammount;
+
+    chart.data = []
+    for (var i = 0; i < rawData.length; i+=1) {
+        if(rawData[i].category) {
+            if (totalIncomes >= totalExpenses) {
+                chart.data.push({
+                    category: rawData[i].category,
+                    ammount: -1 * rawData[i].ammount,
+                    percentage: rawData[i].ammount * 100 / totalIncomes
+                });
+            } else {
+                chart.data.push({
+                    category: rawData[i].category,
+                    ammount: -1 * rawData[i].ammount,
+                    percentage: rawData[i].ammount * 100 / totalExpenses
+                });
+            }
+        }
+    }
+    if (totalIncomes > totalExpenses) {
+        chart.data.push({
+            category: 'Ahorro',
+            ammount: (totalIncomes - totalExpenses),
+            percentage: (totalIncomes - totalExpenses) * 100 / totalIncomes
+        });
+    }
 
     chart.innerRadius = am4core.percent(40);
     chart.depth = 120;
+    chart.scale = .8;
 
     chart.legend = new am4charts.Legend();
 
-    let savingsEntry = {
-        category: 'Ahorro',
-        percentage: 100 - chart.data[0].percentage,
-        ammount: ((100 * chart.data[0].ammount / chart.data[0].percentage) - chart.data[0].ammount).toFixed(2)
-        };
-    chart.data.push(savingsEntry);
-    chart.data.shift();
-
     var series = chart.series.push(new am4charts.PieSeries3D());
-    series.labels.template.text = "{category}: {value} €";
+    series.labels.template.text = "{category}: \n{value} €";
     series.dataFields.value = "ammount";
     series.dataFields.depthValue = "ammount";
     series.dataFields.category = "category";
