@@ -62,6 +62,7 @@
             }
         }
     }
+    chart.data = _.reverse(_.sortBy(chart.data, ['ammount']));
     if (totalIncomes > totalExpenses) {
         chart.data.push({
             category: 'Ahorro',
