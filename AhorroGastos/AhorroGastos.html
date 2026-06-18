@@ -182,6 +182,19 @@ function render() {
     '</svg>';
 
   var tooltipEl = document.getElementById('income-tooltip');
+
+  function positionTooltip(e) {
+    var margin = 12;
+    var left = e.clientX + 16;
+    var top  = e.clientY + 16;
+    var tw = tooltipEl.offsetWidth;
+    var th = tooltipEl.offsetHeight;
+    if (left + tw + margin > window.innerWidth)  left = e.clientX - tw - margin;
+    if (top  + th + margin > window.innerHeight) top  = Math.max(margin, window.innerHeight - th - margin);
+    tooltipEl.style.left = left + 'px';
+    tooltipEl.style.top  = top  + 'px';
+  }
+
   var hoverArea = document.getElementById('income-hover-area');
   if (hoverArea && tooltipEl) {
     hoverArea.addEventListener('mouseover', function() {
@@ -195,10 +208,7 @@ function render() {
       tooltipEl.innerHTML = html;
       tooltipEl.style.display = 'block';
     });
-    hoverArea.addEventListener('mousemove', function(e) {
-      tooltipEl.style.left = (e.clientX + 16) + 'px';
-      tooltipEl.style.top  = (e.clientY + 16) + 'px';
-    });
+    hoverArea.addEventListener('mousemove', positionTooltip);
     hoverArea.addEventListener('mouseleave', function() {
       tooltipEl.style.display = 'none';
     });
@@ -217,10 +227,7 @@ function render() {
       tooltipEl.innerHTML = html;
       tooltipEl.style.display = 'block';
     });
-    forecastHoverArea.addEventListener('mousemove', function(e) {
-      tooltipEl.style.left = (e.clientX + 16) + 'px';
-      tooltipEl.style.top  = (e.clientY + 16) + 'px';
-    });
+    forecastHoverArea.addEventListener('mousemove', positionTooltip);
     forecastHoverArea.addEventListener('mouseleave', function() {
       tooltipEl.style.display = 'none';
     });
@@ -239,10 +246,7 @@ function render() {
       tooltipEl.innerHTML = html;
       tooltipEl.style.display = 'block';
     });
-    expensesHoverArea.addEventListener('mousemove', function(e) {
-      tooltipEl.style.left = (e.clientX + 16) + 'px';
-      tooltipEl.style.top  = (e.clientY + 16) + 'px';
-    });
+    expensesHoverArea.addEventListener('mousemove', positionTooltip);
     expensesHoverArea.addEventListener('mouseleave', function() {
       tooltipEl.style.display = 'none';
     });
