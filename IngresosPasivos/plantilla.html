@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Type" content="text/html" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Ingresos pasivos - Money Manager Ex</title>
+    <link href="master.css" rel="stylesheet" />
+    <style>
+      #xy-chart-container {
+        border: 1px solid #ddd;
+        margin: 20px 0;
+        border-radius: 4px;
+        overflow-x: auto;
+        background-color: white;
+        position: relative;
+      }
+      #xy-chart {
+        display: block;
+        cursor: crosshair;
+      }
+      .chart-legend {
+        padding: 10px;
+        background-color: #f5f5f5;
+        border-top: 1px solid #ddd;
+        text-align: center;
+        font-size: 12px;
+      }
+
+      /* Tooltip para el hover */
+      #tooltip {
+        position: absolute;
+        background-color: #333;
+        background-color: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 10px 14px;
+        border-radius: 4px;
+        font-size: 12px;
+        display: none;
+        z-index: 1000;
+        white-space: nowrap;
+        border: 1px solid #666;
+      }
+      #tooltip .date {
+        font-weight: bold;
+        margin-bottom: 5px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #666;
+      }
+      #tooltip .amount {
+        color: #64b5f6;
+        margin-top: 3px;
+      }
+      #tooltip .cumulative {
+        color: #81c784;
+        margin-top: 3px;
+      }
+      #tooltip .category {
+        color: #ffd54f;
+        font-size: 11px;
+        margin-top: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Ingresos Pasivos</h1>
+      <div class="filters">
+        <label for="date-filter">Filtrar por fecha:</label>
+        <select id="date-filter">
+          <option value="all">Todos los registros</option>
+          <option value="last-year">Año pasado</option>
+          <option value="this-year">Este año</option>
+          <option value="this-quarter">Este trimestre</option>
+          <option value="last-month">Mes pasado</option>
+          <option value="this-month" selected>Mes actual</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <table class="table sortable">
+          <thead>
+            <tr>
+              <th>Moment</th>
+              <th>Type</th>
+              <th>Category</th>
+              <th>Account</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+          <tfoot id="table-footer"></tfoot>
+        </table>
+      </div>
+
+      <div class="row">
+        <h3 style="margin-top: 40px">Evolución de Ingresos</h3>
+        <div id="xy-chart-container" style="width: 100%; height: 520px">
+          <canvas id="xy-chart"></canvas>
+          <div id="tooltip">
+            <div class="date"></div>
+            <div class="amount"></div>
+            <div class="cumulative"></div>
+            <div class="category"></div>
+          </div>
+        </div>
+        <div class="chart-legend">
+          <span style="color: #2196f3; font-weight: bold">&#9679;</span> Importe diario &nbsp;&nbsp;
+          <span style="color: #4caf50; font-weight: bold">&#9679;</span> Acumulado &nbsp;&nbsp;
+          <em style="font-size: 11px; color: #666">(Pasa el ratón sobre el gráfico para ver detalles)</em>
+        </div>
+      </div>
+
+      <script type="text/javascript">
+        var data = [<TMPL_LOOP NAME=CONTENTS>{
+                ag: '<TMPL_VAR AG>',
+                moment: '<TMPL_VAR Moment>',
+                type: '<TMPL_VAR Type>',
+                category: '<TMPL_VAR Category>',
+                amount: <TMPL_VAR Amount>,
+                account: '<TMPL_VAR Account>'
+              },
+            </TMPL_LOOP>];
+
+        var tableBody = document.getElementById('table-body');
+        var tableFooter = document.getElementById('table-footer');
+        var tooltip = document.getElementById('tooltip');
+        var canvas = document.getElementById('xy-chart');
+        var chartContainer = document.getElementById('xy-chart-container');
+
+        // Variables globales para el gráfico
+        var chartData = [];
+        var chartConfig = {
+          padding: 60,
+          chartWidth: 0,
+          chartHeight: 0,
+          maxAmount: 0,
+          minAmount: 0,
+          range: 0
+        };
+
+        function filterDataByDate(option) {
+          var filtered = [];
+          for (var i = 0; i < data.length; i++) {
+            var item = data[i];
+            var moment = new Date(item.moment);
+            var currentDate = new Date();
+            var include = false;
+
+            switch (option) {
+              case 'last-year':
+                include = moment.getFullYear() === currentDate.getFullYear() - 1;
+                break;
+              case 'this-year':
+                include = moment.getFullYear() === currentDate.getFullYear();
+                break;
+              case 'this-quarter':
+                var currentQuarter = Math.floor(currentDate.getMonth() / 3 + 1);
+                var momentQuarter = Math.floor(moment.getMonth() / 3 + 1);
+                include = moment.getFullYear() === currentDate.getFullYear() && momentQuarter === currentQuarter;
+                break;
+              case 'last-month':
+                var lastMonth = currentDate.getMonth() === 0 ? 11 : currentDate.getMonth() - 1;
+                var lastMonthYear = currentDate.getMonth() === 0 ? currentDate.getFullYear() - 1 : currentDate.getFullYear();
+                include = moment.getMonth() === lastMonth && moment.getFullYear() === lastMonthYear;
+                break;
+              case 'this-month':
+                include = moment.getMonth() === currentDate.getMonth() && moment.getFullYear() === currentDate.getFullYear();
+                break;
+              case 'all':
+              default:
+                include = true;
+            }
+
+            if (include) {
+              filtered.push(item);
+            }
+          }
+          return filtered;
+        }
+
+        function renderTable(filteredData) {
+          tableBody.innerHTML = '';
+          var totalAmount = 0;
+
+          for (var i = 0; i < filteredData.length; i++) {
+            var item = filteredData[i];
+            var row = document.createElement('tr');
+            if (i % 2 === 1) {
+              row.className = 'even';
+            }
+
+            var dateCell = document.createElement('td');
+            dateCell.appendChild(document.createTextNode(item.moment));
+            row.appendChild(dateCell);
+
+            var typeCell = document.createElement('td');
+            typeCell.appendChild(document.createTextNode(item.type));
+            row.appendChild(typeCell);
+
+            var categoryCell = document.createElement('td');
+            categoryCell.appendChild(document.createTextNode(item.category));
+            row.appendChild(categoryCell);
+
+            var accountCell = document.createElement('td');
+            accountCell.appendChild(document.createTextNode(item.account));
+            row.appendChild(accountCell);
+
+            var amountCell = document.createElement('td');
+            amountCell.className = 'money';
+            amountCell.appendChild(document.createTextNode(item.amount.toFixed(2) + ' €'));
+            if (item.amount < 0) {
+              amountCell.style.color = '#d32f2f';
+            } else {
+              amountCell.style.color = '#388e3c';
+            }
+            row.appendChild(amountCell);
+
+            tableBody.appendChild(row);
+            totalAmount += item.amount;
+          }
+
+          var footerRow = document.createElement('tr');
+          var emptyCell = document.createElement('td');
+          emptyCell.setAttribute('colspan', '4');
+          emptyCell.appendChild(document.createTextNode('Total (' + filteredData.length + ' registros)'));
+          footerRow.appendChild(emptyCell);
+
+          var totalCell = document.createElement('td');
+          totalCell.className = 'money';
+          totalCell.appendChild(document.createTextNode(totalAmount.toFixed(2) + ' €'));
+          if (totalAmount < 0) {
+            totalCell.style.color = '#d32f2f';
+          } else {
+            totalCell.style.color = '#388e3c';
+          }
+          footerRow.appendChild(totalCell);
+
+          tableFooter.innerHTML = '';
+          tableFooter.appendChild(footerRow);
+        }
+
+        function sortByDate(a, b) {
+          var dateA = new Date(a.moment);
+          var dateB = new Date(b.moment);
+          return dateA - dateB;
+        }
+
+        function getY(value) {
+          if (chartConfig.range === 0) {
+            return canvas.height - chartConfig.padding - chartConfig.chartHeight / 2;
+          }
+          return canvas.height - chartConfig.padding - ((value - chartConfig.minAmount) / chartConfig.range) * chartConfig.chartHeight;
+        }
+
+        function renderXYChart(filteredData) {
+          if (filteredData.length === 0) {
+            chartContainer.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">No hay datos para mostrar</p>';
+            return;
+          }
+
+          // Restaurar canvas y tooltip
+          chartContainer.innerHTML = '';
+          canvas = document.createElement('canvas');
+          canvas.id = 'xy-chart';
+          chartContainer.appendChild(canvas);
+          tooltip = document.createElement('div');
+          tooltip.id = 'tooltip';
+          tooltip.innerHTML = '<div class="date"></div><div class="amount"></div><div class="cumulative"></div><div class="category"></div>';
+          chartContainer.appendChild(tooltip);
+
+          // Ordenar datos
+          var sortedData = filteredData.slice(0);
+          sortedData.sort(sortByDate);
+
+          // Calcular acumulado
+          var cumulativeAmount = 0;
+          chartData = [];
+          for (var i = 0; i < sortedData.length; i++) {
+            var item = sortedData[i];
+            cumulativeAmount += item.amount;
+            chartData.push({
+              date: item.moment,
+              amount: item.amount,
+              cumulative: cumulativeAmount,
+              category: item.category,
+              account: item.account,
+              type: item.type
+            });
+          }
+
+          // Configurar canvas
+          var barWidth = 8;
+          var minWidth = chartContainer.offsetWidth - 4;
+          var calculatedWidth = Math.max(minWidth, chartData.length * barWidth + 120);
+
+          canvas.width = calculatedWidth;
+          canvas.height = 496;
+
+          var ctx = canvas.getContext('2d');
+          chartConfig.padding = 60;
+          chartConfig.chartWidth = canvas.width - chartConfig.padding * 2;
+          chartConfig.chartHeight = canvas.height - chartConfig.padding * 2;
+
+          // Calcular rangos
+          chartConfig.maxAmount = -Infinity;
+          chartConfig.minAmount = Infinity;
+          for (var i = 0; i < chartData.length; i++) {
+            var maxVal = Math.max(chartData[i].amount, chartData[i].cumulative);
+            var minVal = Math.min(chartData[i].amount, chartData[i].cumulative);
+            if (maxVal > chartConfig.maxAmount) chartConfig.maxAmount = maxVal;
+            if (minVal < chartConfig.minAmount) chartConfig.minAmount = minVal;
+          }
+
+          var tempRange = chartConfig.maxAmount - chartConfig.minAmount;
+          chartConfig.maxAmount += tempRange * 0.1;
+          chartConfig.minAmount -= tempRange * 0.1;
+          chartConfig.range = chartConfig.maxAmount - chartConfig.minAmount;
+
+          // Fondo
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // Grid
+          ctx.strokeStyle = '#e0e0e0';
+          ctx.lineWidth = 1;
+          var gridLines = 8;
+          for (var i = 0; i <= gridLines; i++) {
+            var value = chartConfig.minAmount + (i / gridLines) * chartConfig.range;
+            var y = getY(value);
+
+            ctx.beginPath();
+            ctx.moveTo(chartConfig.padding, y);
+            ctx.lineTo(canvas.width - chartConfig.padding, y);
+            ctx.stroke();
+
+            ctx.fillStyle = '#666';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText(value.toFixed(2) + '€', chartConfig.padding - 10, y + 3);
+          }
+
+          // Línea base en 0
+          if (chartConfig.minAmount < 0 && chartConfig.maxAmount > 0) {
+            var zeroY = getY(0);
+            ctx.strokeStyle = '#999';
+            ctx.lineWidth = 2;
+            ctx.setLineDash = ctx.setLineDash || function() {}; // Fallback para IE
+            if (ctx.setLineDash) {
+              ctx.setLineDash([5, 3]);
+            }
+            ctx.beginPath();
+            ctx.moveTo(chartConfig.padding, zeroY);
+            ctx.lineTo(canvas.width - chartConfig.padding, zeroY);
+            ctx.stroke();
+            if (ctx.setLineDash) {
+              ctx.setLineDash([]);
+            }
+          }
+
+          // Ejes
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(chartConfig.padding, chartConfig.padding);
+          ctx.lineTo(chartConfig.padding, canvas.height - chartConfig.padding);
+          ctx.lineTo(canvas.width - chartConfig.padding, canvas.height - chartConfig.padding);
+          ctx.stroke();
+
+          // Barras
+          for (var i = 0; i < chartData.length; i++) {
+            var point = chartData[i];
+            var x = chartConfig.padding + (i / Math.max(1, chartData.length - 1)) * chartConfig.chartWidth;
+            var barY = getY(point.amount);
+            var zeroY = getY(0);
+            var barHeight = Math.abs(barY - zeroY);
+
+            if (point.amount >= 0) {
+              ctx.fillStyle = 'rgba(33, 150, 243, 0.7)';
+              ctx.fillRect(x - 2, barY, 4, barHeight);
+            } else {
+              ctx.fillStyle = 'rgba(244, 67, 54, 0.7)';
+              ctx.fillRect(x - 2, zeroY, 4, barHeight);
+            }
+          }
+
+          // Línea acumulativa
+          ctx.strokeStyle = '#4CAF50';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          for (var i = 0; i < chartData.length; i++) {
+            var point = chartData[i];
+            var x = chartConfig.padding + (i / Math.max(1, chartData.length - 1)) * chartConfig.chartWidth;
+            var y = getY(point.cumulative);
+
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+          ctx.stroke();
+
+          // Puntos
+          for (var i = 0; i < chartData.length; i++) {
+            var point = chartData[i];
+            var x = chartConfig.padding + (i / Math.max(1, chartData.length - 1)) * chartConfig.chartWidth;
+            var y = getY(point.cumulative);
+
+            ctx.fillStyle = '#2e7d32';
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // Título
+          ctx.fillStyle = '#333';
+          ctx.font = 'bold 14px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('Importes Diarios y Evolución Acumulada', canvas.width / 2, 20);
+
+          // Etiquetas eje X
+          ctx.font = '9px Arial';
+          ctx.fillStyle = '#666';
+          ctx.textAlign = 'center';
+          var labelInterval = Math.max(1, Math.floor(chartData.length / 10));
+          for (var i = 0; i < chartData.length; i++) {
+            if (i % labelInterval === 0 || i === chartData.length - 1) {
+              var point = chartData[i];
+              var x = chartConfig.padding + (i / Math.max(1, chartData.length - 1)) * chartConfig.chartWidth;
+              ctx.save();
+              ctx.translate(x, canvas.height - chartConfig.padding + 15);
+              ctx.rotate(-Math.PI / 4);
+              ctx.fillText(point.date, 0, 0);
+              ctx.restore();
+            }
+          }
+
+          // Info
+          ctx.font = '10px Arial';
+          ctx.textAlign = 'left';
+          ctx.fillText('Total registros: ' + chartData.length, chartConfig.padding, canvas.height - 10);
+
+          // HOVER - Compatible con IE
+          setupHover();
+        }
+
+        function setupHover() {
+          var canvas = document.getElementById('xy-chart');
+          var tooltip = document.getElementById('tooltip');
+
+          function findClosestPoint(mouseX, mouseY) {
+            var minDistance = 99999;
+            var closestPoint = null;
+            var closestIndex = -1;
+
+            for (var i = 0; i < chartData.length; i++) {
+              var point = chartData[i];
+              var x = chartConfig.padding + (i / Math.max(1, chartData.length - 1)) * chartConfig.chartWidth;
+              var yBar = getY(point.amount);
+              var yCumulative = getY(point.cumulative);
+              var zeroY = getY(0);
+
+              // Distancia a la barra
+              var distanceToBar = Math.abs(mouseX - x);
+              var minBarY = Math.min(yBar, zeroY);
+              var maxBarY = Math.max(yBar, zeroY);
+
+              if (mouseY >= minBarY && mouseY <= maxBarY) {
+                if (distanceToBar < minDistance && distanceToBar < 10) {
+                  minDistance = distanceToBar;
+                  closestPoint = point;
+                  closestIndex = i;
+                }
+              }
+
+              // Distancia al punto acumulativo
+              var dx = mouseX - x;
+              var dy = mouseY - yCumulative;
+              var distanceToCumulative = Math.sqrt(dx * dx + dy * dy);
+
+              if (distanceToCumulative < minDistance && distanceToCumulative < 15) {
+                minDistance = distanceToCumulative;
+                closestPoint = point;
+                closestIndex = i;
+              }
+            }
+
+            return { point: closestPoint, index: closestIndex };
+          }
+
+          function onMouseMove(e) {
+            e = e || window.event; // IE compatibility
+            var rect = canvas.getBoundingClientRect();
+            var mouseX = (e.clientX || e.pageX) - rect.left;
+            var mouseY = (e.clientY || e.pageY) - rect.top;
+
+            var result = findClosestPoint(mouseX, mouseY);
+
+            if (result.point) {
+              var point = result.point;
+
+              // Actualizar tooltip
+              tooltip.getElementsByClassName('date')[0].innerHTML = point.date;
+              tooltip.getElementsByClassName('amount')[0].innerHTML = 'Importe: ' + point.amount.toFixed(2) + ' &euro;';
+              tooltip.getElementsByClassName('cumulative')[0].innerHTML = 'Acumulado: ' + point.cumulative.toFixed(2) + ' &euro;';
+              tooltip.getElementsByClassName('category')[0].innerHTML = point.category;
+
+              // Posicionar tooltip
+              var containerRect = chartContainer.getBoundingClientRect();
+              var tooltipX = (e.clientX || e.pageX) - containerRect.left + 15;
+              var tooltipY = (e.clientY || e.pageY) - containerRect.top - 15;
+
+              // Ajustar posición si se sale
+              if (tooltipX + 200 > chartContainer.offsetWidth) {
+                tooltipX = (e.clientX || e.pageX) - containerRect.left - 200 - 15;
+              }
+              if (tooltipY < 0) {
+                tooltipY = 10;
+              }
+
+              tooltip.style.left = tooltipX + 'px';
+              tooltip.style.top = tooltipY + 'px';
+              tooltip.style.display = 'block';
+              canvas.style.cursor = 'pointer';
+
+            } else {
+              tooltip.style.display = 'none';
+              canvas.style.cursor = 'crosshair';
+            }
+          }
+
+          function onMouseLeave() {
+            tooltip.style.display = 'none';
+            canvas.style.cursor = 'crosshair';
+          }
+
+          // Eventos compatibles con IE
+          if (canvas.addEventListener) {
+            canvas.addEventListener('mousemove', onMouseMove, false);
+            canvas.addEventListener('mouseleave', onMouseLeave, false);
+          } else if (canvas.attachEvent) {
+            canvas.attachEvent('onmousemove', onMouseMove);
+            canvas.attachEvent('onmouseleave', onMouseLeave);
+          }
+        }
+
+        // Event listener para el filtro
+        var dateFilter = document.getElementById('date-filter');
+        function onFilterChange() {
+          var selectedOption = dateFilter.value;
+          var filteredData = filterDataByDate(selectedOption);
+          renderTable(filteredData);
+          renderXYChart(filteredData);
+        }
+
+        if (dateFilter.addEventListener) {
+          dateFilter.addEventListener('change', onFilterChange, false);
+        } else if (dateFilter.attachEvent) {
+          dateFilter.attachEvent('onchange', onFilterChange);
+        }
+
+        // Inicialización
+        var selectedOption = dateFilter.value;
+        var filteredData = filterDataByDate(selectedOption);
+        renderTable(filteredData);
+        renderXYChart(filteredData);
+      </script>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv = "Content-Type" content = "text/html" />
+    <title><TMPL_VAR REPORTNAME></title>
+    <!-- Fuente Roboto desde Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet" />
+    <script src="sorttable.js"></script>
+    <script src="script.js"></script>
+    <style>
+      body {
+        font-family: 'Roboto', Arial, sans-serif;
+        background-color: #f5f5f5;
+        padding: 20px;
+      }
+
+      .row {
+        width: 100%;
+        overflow: hidden;
+        margin-bottom: 10px;
+      }
+      .col {
+        float: left;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+
+      .col-1 {
+        width: 8.33%;
+      }
+      .col-2 {
+        width: 16.66%;
+      }
+      .col-3 {
+        width: 25%;
+      }
+      .col-4 {
+        width: 33.33%;
+      }
+      .col-5 {
+        width: 41.66%;
+      }
+      .col-6 {
+        width: 50%;
+      }
+      .col-7 {
+        width: 58.33%;
+      }
+      .col-8 {
+        width: 66.66%;
+      }
+      .col-9 {
+        width: 75%;
+      }
+      .col-10 {
+        width: 83.33%;
+      }
+      .col-11 {
+        width: 91.66%;
+      }
+      .col-12 {
+        width: 100%;
+      }
+
+      .card {
+        background-color: #fff;
+        padding: 15px;
+        border: 1px solid #ccc;
+        height: 100%;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        border-radius: 6px;
+      }
+
+      .card-header {
+        overflow: hidden;
+        margin-bottom: 10px;
+      }
+
+      .card-header h2 {
+        float: left;
+        font-size: 18px;
+        margin: 0;
+        font-weight: 700;
+      }
+
+      .card-header select {
+        float: right;
+        font-size: 13px;
+        padding: 3px 6px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+      }
+
+      .card p {
+        font-size: 14px;
+        font-weight: 400;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 4px; /* Más compacto */
+        border-bottom: 1px solid #ddd;
+        font-size: 12px; /* Letra más pequeña */
+      }
+
+      th {
+        background-color: #f0f0f0;
+        font-weight: 700;
+      }
+
+      tr:hover {
+        background-color: #f9f9f9;
+      }
+
+      .right {
+        text-align: right;
+      }
+
+      .money {
+        text-align: right;
+        position: relative;
+      }
+
+      .money::after {
+        content: " €";
+      }
+
+      .money[data-value^="-"] {
+        color: red;
+      }
+
+      .percent {
+        text-align: right;
+        position: relative;
+      }
+
+      .percent::after {
+        content: " %";
+      }
+
+      .percent[data-value^="-"] {
+        color: red;
+      }
+
+      .summary-row-selected {
+        background-color: #dfefff !important;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Resumen Financiero</h1>
+    <div class="row">
+      <div class="col col-4">
+        <div class="card">
+          <div class="card-header"><h2>Totales</h2></div>
+          <table class="table">
+            <tbody>
+              <tr>
+                <td>Invesión TOTAL</td>
+                <td id="inversionTotal" class="money"></td>
+              </tr>
+              <tr>
+                <td>Valor ACTUAL</td>
+                <td id="valorActual" class="money"></td>
+              </tr>
+              <tr>
+                <td>Ganancias/Pérdidas</td>
+                <td id="ganaciasPerdidas" class="money"></td>
+              </tr>
+              <tr>
+                <td>Rentabilidad ACUMULADA</td>
+                <td id="rentabilidadAcumulada" class="percent"></td>
+              </tr>
+              <tr>
+                <td>TAE TOTAL</td>
+                <td id="TAE" class="percent"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      </div>
+      <div class="row">
+      <div class="col col-6">
+        <div class="card">
+          <div class="card-header">
+            <h2>Resumen de ingresos Renta Variable</h2>
+            <select id="yearFilter">
+              <option>Todos los años</option>
+              <option>2026</option>
+              <option>2025</option>
+              <option>2024</option>
+            </select>
+          </div>
+          <table class="table sortable">
+            <thead>
+              <tr>
+                <th></th>
+                <th class="right">Inversión Total</th>
+                <th class="right">Valor Actual</th>
+                <th class="right">Ganancias/Pérdidas</th>
+                <th class="right">Rentabilidad Acumulada</th>
+                <th class="right">TAE</th>
+              </tr>
+            </thead>
+            <tbody id="summary-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col col-6">
+        <div class="card">
+          <div class="card-header"><h2>Resumen cartera</h2></div>
+            <table class="table sortable">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Nombre</th>
+                  <th class="right">Participaciones</th>
+                  <th class="right">Precio compra</th>
+                  <th class="right">Inversión Realizada</th>
+                  <th class="right">Precio actual</th>
+                  <th class="right">Valor mercado</th>
+                  <th class="right">Plusvalías</th>
+                </tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+              <tfoot id="table-footer"></tfoot>
+            </table>
+          </div>
+      </div>
+    </div>
+    
+    <script type="text/javascript">
+var data = [<TMPL_LOOP NAME=CONTENTS>{
+          moment: '<TMPL_VAR Fecha>',
+          stockName: '<TMPL_VAR STOCKNAME>',
+          participaciones: '<TMPL_VAR Participaciones>',
+          valorParticipativo: <TMPL_VAR ValorParticipativo>,
+          inversionRealizada: '<TMPL_VAR InversionRealizada>', 
+          valorMercado: '<TMPL_VAR ValorMercado>', 
+          plusvalias: '<TMPL_VAR Plusvalias>', 
+        },
+      </TMPL_LOOP>];
+
+var currentYearFilter = 'Todos los años';
+var currentStockFilter = null;
+
+function prepararDatosXirrTotal(data, valorMercado) {
+  var flujos = {};
+
+  for (var i = 0; i < data.length; i++) {
+    var item = data[i];
+    var fecha = item.moment;
+    if (!flujos[fecha]) flujos[fecha] = 0;
+    // Inversión negativa
+    flujos[fecha] -= parseFloat(item.inversionRealizada) || 0;
+  }
+
+  // Ordenar fechas
+  var fechasOrdenadas = [];
+  for (var f in flujos) {
+    if (flujos.hasOwnProperty(f)) fechasOrdenadas.push(f);
+  }
+  fechasOrdenadas.sort(function (a, b) {
+    return new Date(a) - new Date(b);
+  });
+
+  var costs = [];
+  var dates = [];
+  for (var j = 0; j < fechasOrdenadas.length; j++) {
+    var f = fechasOrdenadas[j];
+    costs.push(flujos[f]);
+    dates.push(f);
+  }
+
+  // Añadir valor de mercado positivo al final (cash out)
+  var finalValor = parseFloat(valorMercado) || 0;
+  if (finalValor === 0) finalValor = 0.01; // evita cero
+  costs.push(finalValor);
+  dates.push(new Date());
+
+  return { costs: costs, dates: dates };
+}
+
+function renderTotals(filteredData) {
+  var inversionTotal = 0;
+  var valorActual = 0;
+  var plusvalias = 0;
+  for (var i = 0; i < filteredData.length; i++) {
+    var item = filteredData[i];
+    inversionTotal += parseFloat(item.inversionRealizada) || 0;
+    valorActual += (parseFloat(item.valorMercado) || 0) * (parseFloat(item.participaciones) || 0);
+    plusvalias += parseFloat(item.plusvalias) || 0;
+  }
+  var rentabilidad = inversionTotal !== 0 ? (plusvalias / inversionTotal) * 100 : 0;
+
+  var datosXirr = prepararDatosXirrTotal(filteredData, valorActual);
+  var tae = xirr(datosXirr.costs, datosXirr.dates) * 100;
+
+  document.getElementById('inversionTotal').textContent = formatMoneyCell(inversionTotal);
+  document.getElementById('inversionTotal').setAttribute('data-value', inversionTotal);
+
+  document.getElementById('valorActual').textContent = formatMoneyCell(valorActual);
+  document.getElementById('valorActual').setAttribute('data-value', valorActual);
+
+  document.getElementById('ganaciasPerdidas').textContent = formatMoneyCell(plusvalias);
+  document.getElementById('ganaciasPerdidas').setAttribute('data-value', plusvalias);
+
+  document.getElementById('rentabilidadAcumulada').textContent = formatMoneyCell(rentabilidad);
+  document.getElementById('TAE').textContent = formatMoneyCell(tae);
+}
+
+function renderStocksTable(table, filteredData) {
+  // Limpiar tabla antes de renderizar los nuevos datos
+  table.innerHTML = '';
+
+  filteredData.forEach(function (item) {
+    var row = document.createElement('tr');
+
+    var dateCell = document.createElement('td');
+    dateCell.textContent = item.moment;
+    row.appendChild(dateCell);
+
+    var stockNameCell = document.createElement('td');
+    stockNameCell.textContent = item.stockName;
+    row.appendChild(stockNameCell);
+
+    addNumberCell(row, item.participaciones);
+    addMoneyCell(row, item.valorParticipativo);
+    addMoneyCell(row, item.inversionRealizada);
+    addMoneyCell(row, item.valorMercado);
+    addMoneyCell(row, item.participaciones * item.valorMercado)    
+    addMoneyCell(row, item.plusvalias);    
+
+    table.appendChild(row);
+  });
+}
+
+function renderSummaryTable(table, filteredData) {
+  table.innerHTML = '';
+  var inversionTotal = 0,
+    valorActual = 0,
+    plusvalias = 0;
+  for (var i = 0; i < filteredData.length; i++) {
+    var item = filteredData[i];
+    inversionTotal += parseFloat(item.inversionRealizada) || 0;
+    valorActual += (parseFloat(item.valorMercado) || 0) * (parseFloat(item.participaciones) || 0);
+    plusvalias += parseFloat(item.plusvalias) || 0;
+  }
+
+  var rentabilidad = inversionTotal !== 0 ? (plusvalias / inversionTotal) * 100 : 0;
+  var datosXirr = prepararDatosXirrTotal(filteredData, valorActual);
+  var tae = xirr(datosXirr.costs, datosXirr.dates) * 100;
+
+
+  var totalRow = document.createElement('tr');
+  var totalLabelCell = document.createElement('td');
+  totalLabelCell.textContent = 'TOTAL';
+  totalLabelCell.style.fontWeight = 'bold';
+  totalRow.appendChild(totalLabelCell);
+  addMoneyCell(totalRow, inversionTotal);
+  addMoneyCell(totalRow, valorActual);
+  addMoneyCell(totalRow, plusvalias);
+  addPercentCell(totalRow, rentabilidad);
+  addPercentCell(totalRow, tae);
+  totalRow.style.backgroundColor = '#f0f0f0';
+  table.appendChild(totalRow);
+
+
+  var stockMap = {};
+  for (var i = 0; i < filteredData.length; i++) {
+    var item = filteredData[i];
+    if (!stockMap[item.stockName]) stockMap[item.stockName] = { inversionTotal: 0, valorActual: 0, plusvalias: 0 };
+    stockMap[item.stockName].inversionTotal += parseFloat(item.inversionRealizada) || 0;
+    stockMap[item.stockName].valorActual +=
+      (parseFloat(item.valorMercado) || 0) * (parseFloat(item.participaciones) || 0);
+    stockMap[item.stockName].plusvalias += parseFloat(item.plusvalias) || 0;
+  }
+
+  for (var stockName in stockMap) {
+    if (!stockMap.hasOwnProperty(stockName)) continue;
+    var values = stockMap[stockName];
+    var row = document.createElement('tr');
+    var stockCell = document.createElement('td');
+    stockCell.textContent = stockName;
+    row.appendChild(stockCell);
+    addMoneyCell(row, values.inversionTotal);
+    addMoneyCell(row, values.valorActual);
+    addMoneyCell(row, values.plusvalias);
+    addPercentCell(row, values.inversionTotal !== 0 ? (values.plusvalias / values.inversionTotal) * 100 : 0);
+
+    // calcular TAE por activo
+    var operacionesDelStock = [];
+    for (var j = 0; j < filteredData.length; j++) {
+      if (filteredData[j].stockName === stockName) operacionesDelStock.push(filteredData[j]);
+    }
+    var taeActivo = 0;
+    try {
+      var datosXirrActivo = prepararDatosXirrTotal(operacionesDelStock, values.valorActual);
+      taeActivo = xirr(datosXirrActivo.costs, datosXirrActivo.dates) * 100;
+    } catch (e) {
+      taeActivo = 0;
+    }
+    addPercentCell(row, taeActivo);
+
+    row.onclick = function () {
+      filterByStock(this.firstChild.textContent);
+    };
+    table.appendChild(row);
+  }
+}
+
+function filterByStock(stockName) {
+  var yearSelect = document.getElementById('yearFilter');
+  currentYearFilter = yearSelect && yearSelect.value ? yearSelect.value : 'Todos los años';
+  currentStockFilter = stockName;
+
+  var filteredData = filterByYearExact(currentYearFilter);
+
+  for (var i = filteredData.length - 1; i >= 0; i--) {
+    if (filteredData[i].stockName !== stockName) {
+      filteredData.splice(i, 1);
+    }
+  }
+
+  renderStocksTable(document.getElementById('table-body'), filteredData);
+}
+
+function filterByYearExact(year) {
+  var out = [];
+  if (!year || year === 'Todos los años') {
+    for (var i = 0; i < data.length; i++) {
+      out.push(data[i]);
+    }
+    return out;
+  }
+
+  var y = parseInt(year, 10);
+  if (isNaN(y)) {
+    for (var j = 0; j < data.length; j++) {
+      out.push(data[j]);
+    }
+    return out;
+  }
+
+  for (var k = 0; k < data.length; k++) {
+    var item = data[k];
+    if (!item || !item.moment) {
+      continue;
+    }
+    var s = String(item.moment);
+    var itemYear = null;
+    if (s.length >= 4) {
+      itemYear = parseInt(s.substring(0, 4), 10);
+      if (isNaN(itemYear)) {
+        var parts = s.split('-');
+        if (parts.length > 0) {
+          itemYear = parseInt(parts[0], 10);
+        }
+      }
+    }
+    if (itemYear === y) {
+      out.push(item);
+    }
+  }
+  return out;
+}
+
+function formatMoneyCell(value) {
+  var n = parseFloat(value);
+  if (isNaN(n)) {
+    return '0.00'; // o puedes devolver "-" si prefieres
+  }
+  return n.toLocaleString('es-ES', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function addNumberCell(row, valor) {
+  var cell = document.createElement('td');
+  cell.textContent = valor;
+  cell.classList.add('right');
+  cell.setAttribute('data-value', valor);
+  row.appendChild(cell);
+}
+
+function addMoneyCell(row, valor) {
+  var cell = document.createElement('td');
+  cell.textContent = formatMoneyCell(valor);
+  cell.classList.add('money');
+  cell.setAttribute('data-value', valor);
+  cell.setAttribute('sorttable_customkey', valor);
+  row.appendChild(cell);
+}
+
+function addPercentCell(row, valor) {
+if (!valor) valor = 0;
+  var cell = document.createElement('td');
+  cell.textContent = Number(valor).toFixed(2);
+  cell.classList.add('percent');
+  cell.setAttribute('data-value', valor);
+  cell.setAttribute('sorttable_customkey', valor);
+  row.appendChild(cell);
+}
+
+function xirr(values, dates, guess) {
+  if (typeof guess === 'undefined') guess = 0.1;
+  if (values.length !== dates.length) {
+    alert('Error XIRR: arrays de valores y fechas no tienen la misma longitud.');
+    return 0;
+  }
+
+  var maxIterations = 100;
+  var tol = 1e-7;
+
+  var msDates = [];
+  for (var i = 0; i < dates.length; i++) msDates.push(new Date(dates[i]).getTime());
+  var d0 = msDates[0];
+
+    function npv(rate) {
+    var sum = 0;
+    for (var i = 0; i < values.length; i++) {
+      var t = (msDates[i] - d0) / (1000 * 60 * 60 * 24) / 365;
+      if (1 + rate <= 0) {
+        rate = -0.999999999; // límite inferior (no puede ser menor que -100%)
+      }
+      sum += values[i] / Math.pow(1 + rate, t);
+    }
+    return sum;
+  }
+
+  function npvDerivative(rate) {
+    var sum = 0;
+    for (var i = 0; i < values.length; i++) {
+      var t = (msDates[i] - d0) / (1000 * 60 * 60 * 24) / 365;
+      if (1 + rate <= 0) {
+        rate = -0.999999999; // límite inferior (no puede ser menor que -100%)
+      }
+      sum -= (t * values[i]) / Math.pow(1 + rate, t + 1);
+    }
+    return sum;
+  }
+
+  var rate = guess;
+  for (var iter = 0; iter < maxIterations; iter++) {
+    var f = npv(rate);
+    var fPrime = npvDerivative(rate);
+    if (fPrime === 0) break;
+    var newRate = rate - f / fPrime;
+    if (Math.abs(newRate - rate) <= tol) return newRate;
+    rate = newRate;
+  }
+
+  alert('XIRR no convergió tras ' + maxIterations + ' iteraciones.');
+  return 0;
+}
+
+function main() {
+var tableBody = document.getElementById('table-body');
+  var summaryTableBody = document.getElementById('summary-table-body');
+  var yearSelect = document.getElementById('yearFilter');
+
+  function applyFilter() {
+    var selected = yearSelect && yearSelect.value ? yearSelect.value : 'Todos los años';
+    var filteredData = filterByYearExact(selected);
+
+    // Render con datos filtrados
+    renderStocksTable(tableBody, filteredData);
+    renderSummaryTable(summaryTableBody, filteredData);
+    renderTotals(data);
+  }
+
+  // Listener al select
+  if (yearSelect) {
+    if (typeof yearSelect.addEventListener === 'function') {
+      yearSelect.addEventListener('change', applyFilter);
+    } else {
+      yearSelect.onchange = applyFilter;
+    }
+  }
+
+  // Primera carga
+  applyFilter();
+}
+
+
+main();
+
+</script>
+    <TMPL_LOOP ERRORS>
+      <div class="row">
+        <TMPL_VAR ERROR>
+      </div>
+      </TMPL_LOOP>
+  </body>
+</html>
